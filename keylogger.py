@@ -9,6 +9,8 @@ from datetime import datetime
 import threading
 import pyperclip
 from PIL import ImageGrab  # For screenshots
+import sys
+import keyboard as kb  # For detecting exit key combination
 
 # Create log directory
 log_dir = "logs"
@@ -123,5 +125,20 @@ def monitor_clipboard():
             write_log(f"Error monitoring clipboard: {e}")
         time.sleep(1)  # Check clipboard every second
 
+# Exit mechanism if specific key combination is pressed
+def check_exit_combination():
+    print("Monitoring for exit key combination: Ctrl+Alt+Shift+Tab+C")
+    while True:
+        if kb.is_pressed('ctrl+alt+shift+tab+c'):
+            print("Exit combination detected. Exiting...")
+            sys.exit()  # Exit the script
+        time.sleep(0.1)  # Check every 100ms
+
 # Start the background tasks and listeners
-start_background_tasks()
+if __name__ == "__main__":
+    # Start the exit check in a separate thread
+    exit_thread = threading.Thread(target=check_exit_combination, daemon=True)
+    exit_thread.start()
+    
+    # Start other tasks
+    start_background_tasks()
