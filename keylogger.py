@@ -9,7 +9,7 @@ import pyperclip  # Clipboard monitoring
 import threading  # Separate thread for clipboard monitoring
 import time  # For periodic clipboard checks
 
-# Create a log directory
+# Create log directory
 log_dir = "logs"
 os.makedirs(log_dir, exist_ok=True)
 
